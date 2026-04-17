@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+* {
+  scroll-behavior: smooth;
+}
+
+html {
+  scroll-behavior: smooth;
+}
 @theme {
   --color-primary: #5f6fff;
 }
@@ -10,4 +17,7 @@
 
 ::-webkit-scrollbar {
   @apply hidden;
+}
+.grid-cols-auto {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
