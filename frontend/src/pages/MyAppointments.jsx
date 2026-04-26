@@ -68,6 +68,71 @@ const MyAppointments = () => {
     }
   };
 
+  const appointmentStripe = async (appointmentId) => {
+    try {
+      const { data } = await axios.post(
+        backendUrl + "/api/user/payment-stripe",
+        { appointmentId },
+        { headers: { token } },
+      );
+
+      if (data.success && data.url) {
+        // Redirect to Stripe hosted page (same as GreenCart)
+        window.location.href = data.url;
+      } else {
+        toast.error(data.message || "Payment failed");
+      }
+    } catch (error) {
+      toast.error(error.message || "Something went wrong");
+    }
+  };
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get("payment");
+    const appointmentId = params.get("appointmentId");
+
+    if (paymentStatus === "success" && appointmentId) {
+      // Verify payment and update appointment
+      verifyPayment(appointmentId);
+      // Clean URL
+      window.history.replaceState({}, document.title, "/my-appointments");
+    } else if (paymentStatus === "cancelled") {
+      toast.error("Payment was cancelled");
+      window.history.replaceState({}, document.title, "/my-appointments");
+    }
+  }, []);
+
+  const verifyPayment = async (appointmentId) => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+
+      // ✅ Get session_id (NOT payment_intent)
+      const sessionId = urlParams.get("session_id");
+
+      console.log("Verifying payment:", { appointmentId, sessionId }); 
+
+      if (sessionId) {
+        const { data } = await axios.post(
+          backendUrl + "/api/user/verify-stripe-payment",
+          { appointmentId, sessionId },
+          { headers: { token } },
+        );
+
+        if (data.success) {
+          toast.success("Payment successful! Appointment confirmed.");
+          getUserAppointments(); // Refresh list to show "✓ Paid"
+        } else {
+          toast.error(data.message);
+        }
+      } else {
+        console.warn("No session_id found in URL");
+      }
+    } catch (error) {
+      console.error("Verification error:", error);
+      toast.error("Could not verify payment");
+    }
+  };
+
   useEffect(() => {
     if (token) {
       getUserAppointments();
@@ -109,13 +174,25 @@ const MyAppointments = () => {
             </div>
             <div></div>
             <div className="flex flex-col gap-2 justify-end">
-              {!item.cancelled && (
-                <button className="text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300">
+              {/* Pay Online: Show if NOT cancelled AND NOT paid */}
+              {!item.cancelled && !item.payment && (
+                <button
+                  onClick={() => appointmentStripe(item._id)}
+                  className="text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300"
+                >
                   Pay Online
                 </button>
               )}
 
-              {!item.cancelled && (
+              {/* Paid: Show if NOT cancelled AND paid */}
+              {!item.cancelled && item.payment && (
+                <button className="sm:min-w-48 py-2 border border-green-500 rounded text-green-600 bg-green-50">
+                   Paid
+                </button>
+              )}
+
+              {/* Cancel: Show if NOT cancelled AND NOT paid */}
+              {!item.cancelled && !item.payment && (
                 <button
                   onClick={() => cancelAppointment(item._id)}
                   className="text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300"
@@ -123,6 +200,8 @@ const MyAppointments = () => {
                   Cancel appointment
                 </button>
               )}
+
+              {/* Cancelled status */}
               {item.cancelled && (
                 <button className="sm:min-w-48 py-2 border border-red-500 rounded text-red-500">
                   Appointment cancelled
