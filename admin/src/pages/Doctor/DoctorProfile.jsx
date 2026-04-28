@@ -152,6 +152,7 @@ const DoctorProfile = () => {
                 type="checkbox"
                 name=""
                 id=""
+                className="cursor-pointer"
               />
               <label htmlFor="">Available</label>
             </div>
