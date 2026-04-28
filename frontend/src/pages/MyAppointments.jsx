@@ -109,7 +109,7 @@ const MyAppointments = () => {
       // ✅ Get session_id (NOT payment_intent)
       const sessionId = urlParams.get("session_id");
 
-      console.log("Verifying payment:", { appointmentId, sessionId }); 
+      console.log("Verifying payment:", { appointmentId, sessionId });
 
       if (sessionId) {
         const { data } = await axios.post(
@@ -175,7 +175,7 @@ const MyAppointments = () => {
             <div></div>
             <div className="flex flex-col gap-2 justify-end">
               {/* Pay Online: Show if NOT cancelled AND NOT paid */}
-              {!item.cancelled && !item.payment && (
+              {!item.cancelled && !item.payment && !item.isCompleted && (
                 <button
                   onClick={() => appointmentStripe(item._id)}
                   className="text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300"
@@ -185,14 +185,14 @@ const MyAppointments = () => {
               )}
 
               {/* Paid: Show if NOT cancelled AND paid */}
-              {!item.cancelled && item.payment && (
+              {!item.cancelled && item.payment && !item.isCompleted && (
                 <button className="sm:min-w-48 py-2 border border-green-500 rounded text-green-600 bg-green-50">
-                   Paid
+                  Paid
                 </button>
               )}
 
               {/* Cancel: Show if NOT cancelled AND NOT paid */}
-              {!item.cancelled && !item.payment && (
+              {!item.cancelled && !item.payment && !item.isCompleted && (
                 <button
                   onClick={() => cancelAppointment(item._id)}
                   className="text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300"
@@ -202,9 +202,15 @@ const MyAppointments = () => {
               )}
 
               {/* Cancelled status */}
-              {item.cancelled && (
+              {item.cancelled && !item.isCompleted && (
                 <button className="sm:min-w-48 py-2 border border-red-500 rounded text-red-500">
                   Appointment cancelled
+                </button>
+              )}
+              {item.isCompleted && (
+                <button className="sm:min-w-48 py-2 border border-green-500 rounded text-green-500">
+                  {" "}
+                  Completed
                 </button>
               )}
             </div>
